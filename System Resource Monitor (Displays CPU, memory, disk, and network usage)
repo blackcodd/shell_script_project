@@ -82,17 +82,40 @@ show_network_usage() {
 
 # ---------- Auto Refresh Mode ----------
 auto_refresh() {
+    trap 'echo -e "\n${GREEN}Returning to main menu...${NC}"; sleep 1; return' SIGINT
+
     while true; do
         clear
-        echo -e "${GREEN}==== Live System Resource Monitor (Auto Refresh Every 2s) ====${NC}"
-        show_cpu_usage
-        show_memory_usage
-        show_disk_usage
-        show_network_usage
-        echo -e "${CYAN}Press Ctrl+C to exit auto refresh mode.${NC}"
+        echo -e "${GREEN}==== Live System Resource Monitor (Refreshing Every 2s) ====${NC}"
+
+        # CPU
+        echo -e "${YELLOW}----- CPU Usage -----${NC}"
+        top -bn1 | grep "Cpu(s)" | awk '{print "User: " $2 "%, System: " $4 "%, Idle: " $8 "%"}'
+
+        # Temp (if available)
+        if [ "$HAS_SENSORS" -eq 1 ]; then
+            echo -e "\n${YELLOW}----- CPU Temperature -----${NC}"
+            sensors | grep -i 'temp' | grep -E 'Package|Core'
+        fi
+
+        # Memory
+        echo -e "\n${YELLOW}----- Memory Usage -----${NC}"
+        free -h
+
+        # Disk
+        echo -e "\n${YELLOW}----- Disk Usage -----${NC}"
+        df -h
+
+        # Network
+        echo -e "\n${YELLOW}----- Network Usage -----${NC}"
+        cat /proc/net/dev | tail -n +3 | awk '{print $1 "  Receive: " $2 " bytes  |  Transmit: " $10 " bytes"}'
+
+        echo -e "\n${CYAN}Press Ctrl+C to return to main menu...${NC}"
         sleep 2
     done
 }
+
+
 
 # ---------- Menu Loop ----------
 while true; do
